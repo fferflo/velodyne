@@ -26,6 +26,8 @@ namespace velodyne_pointcloud
     diagnostics_(node, private_nh, node_name)
   {
     // Get startup parameters
+    int queue_size;
+    private_nh.param<int>("queue_size", queue_size, 10);
     private_nh.param<std::string>("fixed_frame", config_.fixed_frame, "velodyne");
     private_nh.param<std::string>("target_Frame", config_.target_frame, "velodyne");
     private_nh.param<double>("min_range", config_.min_range, 10.0);
@@ -61,7 +63,7 @@ namespace velodyne_pointcloud
 
     // advertise output point cloud (before subscribing to input data)
     output_ =
-      node.advertise<sensor_msgs::PointCloud2>("velodyne_points", 10);
+      node.advertise<sensor_msgs::PointCloud2>("velodyne_points", queue_size);
 
     srv_ = boost::make_shared <dynamic_reconfigure::Server<velodyne_pointcloud::
       CloudNodeConfig> > (private_nh);
@@ -72,7 +74,7 @@ namespace velodyne_pointcloud
 
     // subscribe to VelodyneScan packets
     velodyne_scan_ =
-      node.subscribe("velodyne_packets", 10,
+      node.subscribe("velodyne_packets", queue_size,
                      &Convert::processScan, (Convert *) this,
                      ros::TransportHints().tcpNoDelay(true));
 
